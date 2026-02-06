@@ -1,0 +1,64 @@
+# --- General Operating System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Build & Dependency Artifacts ---
+# Python Virtual Environments
+venv/
+.env/
+.venv/
+.tox/
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Installer files
+*.egg-info/
+.eggs/
+
+# Pip/Poetry lock and install files (often regenerated)
+pip-log.txt
+pip-delete-this-file.txt
+
+# --- Testing & Coverage ---
+.coverage
+.pytest_cache/
+htmlcov/
+.nox/
+
+# --- Machine Learning & AI Specifics ---
+# Directories for large models, data, and logs
+/data/
+/models/
+/logs/
+/checkpoints/
+
+# Common ML/AI frameworks artifacts
+tensorboard/
+runs/
+wandb/
+mlruns/
+hparams.yaml
+
+# Jupyter Notebook files (often large output or temporary)
+.ipynb_checkpoints
+
+# --- IDE and Editor Files ---
+# Visual Studio Code
+.vscode/
+
+# PyCharm/IntelliJ
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim/Nano swap files
+*~
+*.swp
+*.bak
+

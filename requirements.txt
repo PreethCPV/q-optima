@@ -1,0 +1,6 @@
+crewai
+crewai-tools
+qiskit
+qiskit-aer
+langchain-google-genai
+python-dotenv
