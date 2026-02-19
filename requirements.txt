@@ -4,3 +4,15 @@ qiskit
 qiskit-aer
 langchain-google-genai
 python-dotenv
+
+qiskit_ibm_runtime
+langchain-groq
+litellm>=1.40.0
+
+langchain-groq
+# litellm[proxy]
+fastapi-sso
+pydantic[email]
+fastapi 
+uvicorn 
+apscheduler
