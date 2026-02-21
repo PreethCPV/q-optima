@@ -16,3 +16,4 @@ pydantic[email]
 fastapi 
 uvicorn 
 apscheduler
+pillow

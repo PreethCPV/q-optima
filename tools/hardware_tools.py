@@ -1,6 +1,7 @@
 from crewai.tools import tool
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import json
+from src.cache import tool_cache
 
 class HardwareTools:
 
@@ -20,6 +21,9 @@ class HardwareTools:
         CRITICAL: This data is the ONLY source of truth for circuit generation.
         Do NOT assume any topology. Use this data explicitly.
         """
+
+        if tool_cache.has("hardware_topology"):
+            return tool_cache.get("hardware_topology")
         backend = FakeManilaV2()
         config = backend.configuration()
         
@@ -55,4 +59,5 @@ NATIVE BASIS GATES:
 CONSTRAINT: You can ONLY apply two-qubit gates between qubits listed in the coupling map.
 If qubits are not directly connected, you MUST use SWAP gates through valid intermediate paths.
 """
+        tool_cache.set("hardware_topology", output.strip())
         return output.strip()
