@@ -12,6 +12,14 @@ venv/
 
 .visualizations
 
+# Virtual environment
+Include/
+Lib/
+Scripts/
+share/
+pyvenv.cfg
+
+
 # Compiled Python files
 __pycache__/
 *.pyc
