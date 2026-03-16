@@ -17,3 +17,12 @@ fastapi
 uvicorn 
 apscheduler
 pillow
+
+scikit-learn
+numpy
+
+wfdb
+neurokit2
+scipy
+
+networkx

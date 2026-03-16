@@ -9,8 +9,7 @@ venv/
 .venv/
 .tox/
 .logs
-
-.visualizations
+visualizations/
 
 # Compiled Python files
 __pycache__/

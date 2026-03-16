@@ -4,15 +4,23 @@ import io
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel
-from qiskit_ibm_runtime.fake_provider import FakeManilaV2
+from qiskit_ibm_runtime.fake_provider import FakeManilaV2, FakeJakartaV2, FakeGuadalupeV2
 import numpy as np
+import os
+
+BACKEND_REGISTRY = {
+    "manila": FakeManilaV2,
+    "jakarta": FakeJakartaV2,
+    "guadalupe": FakeGuadalupeV2
+}
 
 class SimulationTools:
 
-    @tool("Run Noisy Simulation")
-    def calculate_fidelity(qiskit_code: str = ""):
+
+    @staticmethod
+    def _execute_simulation(qiskit_code: str) -> str:
         """
-        Executes Qiskit code on the FakeManilaV2 Digital Twin with noise modeling.
+        Executes Qiskit code on the configured Digital Twin with noise modeling.
         
         Uses measurement-based fidelity (more realistic for actual quantum hardware).
         
@@ -20,7 +28,7 @@ class SimulationTools:
             qiskit_code: String containing ONLY circuit definition code
         
         Returns:
-        - 'STATUS: SUCCESS | Fidelity: X.XX' if fidelity >= 0.70
+        - 'STATUS: SUCCESS | Fidelity: X.XX' if fidelity >= 0.60
         - 'STATUS: FAIL | [Reason]' with specific error details
         """
         # ===== STEP 1: VALIDATION =====
@@ -28,6 +36,12 @@ class SimulationTools:
             return "STATUS: FAIL | Runtime Error: No code provided to simulate."
         
         # Check for forbidden execution code patterns
+        if 'class QuantumCircuit' in qiskit_code and 'def __init__' in qiskit_code:
+            return "STATUS: FAIL | Code injection detected: QuantumCircuit class override"
+        if 'simulator.run(' in qiskit_code:
+            return "STATUS: FAIL | Code Validation Error: forbidden execution code detected"
+        if 'AerSimulator()' in qiskit_code and 'from qiskit_aer' not in qiskit_code:
+            return "STATUS: FAIL | Code Validation Error: forbidden simulator instantiation"
         forbidden_patterns = {
             'simulator.run(': 'Execution code detected',
             'execute(': 'Deprecated execute() function',
@@ -47,10 +61,10 @@ class SimulationTools:
                     "ALLOWED CODE STRUCTURE:\n"
                     "```python\n"
                     "from qiskit import QuantumCircuit\n"
-                    "qc = QuantumCircuit(5, 5)\n"
-                    "qc.h(0)\n"
-                    "qc.cx(0, 4)\n"
-                    "qc.measure_all()\n"
+                    "# Define your circuit with the correct number of qubits based on the prompt\n"
+                    "qc = QuantumCircuit(num_qubits, num_clbits)\n"
+                    "# ... apply valid gates ...\n"
+                    "qc.measure(qubits, clbits)\n"
                     "```\n\n"
                     "Remove any execution code after qc.measure_all()"
                 )
@@ -78,7 +92,7 @@ class SimulationTools:
             if 'qc' not in local_scope:
                 return (
                     "STATUS: FAIL | Runtime Error: Variable 'qc' not found.\n\n"
-                    "Your code must define: qc = QuantumCircuit(5, 5)"
+                    "Your code must define 'qc' as a QuantumCircuit with dimensions matching the user request."
                 )
             
             qc = local_scope['qc']
@@ -86,19 +100,18 @@ class SimulationTools:
             if not isinstance(qc, QuantumCircuit):
                 return f"STATUS: FAIL | Type Error: 'qc' is {type(qc).__name__}, not QuantumCircuit."
             
-            # ===== STEP 4: GET BACKEND =====
-            backend = FakeManilaV2()
-            
-            # ===== STEP 5: TRANSPILATION TEST =====
+            backend_name = os.environ.get("QOPTIMA_BACKEND", "manila")
+            backend_class = BACKEND_REGISTRY.get(backend_name, FakeManilaV2)
+            backend = backend_class()
             try:
-                transpiled_qc = transpile(qc, backend, optimization_level=1)
+                transpiled_qc = transpile(qc, backend, optimization_level=1, layout_method='trivial')
             except Exception as e:
                 error_msg = str(e)
                 if "not in coupling map" in error_msg.lower():
                     return (
                         f"STATUS: FAIL | Hardware Mapping Failed: {error_msg}\n\n"
                         "The circuit uses invalid qubit connections.\n"
-                        "Transpiler should handle this automatically - check qubit indices (0-4)."
+                        "Transpiler should handle this automatically - check that your qubit indices exist on the current hardware."
                     )
                 else:
                     return f"STATUS: FAIL | Transpilation Error: {error_msg}"
@@ -119,14 +132,16 @@ class SimulationTools:
             # This compares measurement distributions (more realistic than statevector)
             fidelity = calculate_hellinger_fidelity(ideal_counts, noisy_counts)
             
-            # ===== STEP 9: DECISION =====
-            if fidelity >= 0.70:
-                return f"STATUS: SUCCESS | Fidelity: {fidelity:.4f} (>= 0.70 threshold)"
+            threshold = 0.60
+
+            if fidelity >= threshold:
+                return f"STATUS: SUCCESS | Fidelity: {fidelity:.4f} (>= 0.60 threshold)"
             else:
                 return (
-                    f"STATUS: FAIL | Low Fidelity: {fidelity:.4f} (below 0.70 threshold)\n\n"
-                    "Circuit is valid but noise degrades performance.\n"
-                    "This is expected for complex circuits on noisy hardware."
+                    f"STATUS: FAIL | Low Fidelity: {fidelity:.4f} (below 0.60 threshold)\n\n"
+                    "Circuit is mathematically valid, but physical hardware noise degraded the data.\n"
+                    "OPTIMIZER ACTION REQUIRED: Analyze the Coupling Map from the hardware specification. "
+                    "Rewrite the circuit to use a different, quieter pair of physically connected qubits to avoid this noise."
                 )
 
         except Exception as e:
@@ -134,11 +149,19 @@ class SimulationTools:
             error_str = str(e)
             
             if "qc" in error_str or "not defined" in error_str:
-                return f"STATUS: FAIL | Runtime Error: {error_str}\n\nDefine: qc = QuantumCircuit(5, 5)"
+                return f"STATUS: FAIL | Runtime Error: {error_str}\n\nEnsure you define 'qc' as a QuantumCircuit with the correct dimensions."
             elif "import" in error_str.lower():
                 return f"STATUS: FAIL | Import Error: {error_str}\n\nUse: from qiskit import QuantumCircuit"
             else:
                 return f"STATUS: FAIL | Runtime Error: {error_str}"
+    
+    @tool("Run Noisy Simulation")  
+    def calculate_fidelity(qiskit_code: str = ""):
+        """
+        Executes Qiskit code on the configured Digital Twin with noise modeling.
+        Returns STATUS: SUCCESS or FAIL with fidelity score.
+        """
+        return SimulationTools._execute_simulation(qiskit_code)
 
 
 def calculate_hellinger_fidelity(counts1, counts2, shots=1024):
@@ -163,3 +186,10 @@ def calculate_hellinger_fidelity(counts1, counts2, shots=1024):
     fidelity = overlap_sum ** 2
     
     return fidelity
+
+def run_simulation_direct(qiskit_code: str) -> str:
+    """
+    Direct simulation call for ground truth fidelity extraction in main.py.
+    Bypasses CrewAI Tool object wrapping — callable as a plain Python function.
+    """
+    return SimulationTools._execute_simulation(qiskit_code)

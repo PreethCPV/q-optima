@@ -41,6 +41,12 @@ class ConversationMemory:
             self.error_types_seen.add("runtime_error")
         elif "Import Error" in error:
             self.error_types_seen.add("import_error")
+        elif "Malformed" in error or "crashed" in error:
+            self.error_types_seen.add("verifier_error")
+        elif "injection" in error.lower():
+            self.error_types_seen.add("code_injection")
+        else:
+            self.error_types_seen.add("unknown")
     
     def record_fix(self, fix_description: str):
         """Call this after optimizer runs to log the fix attempt."""

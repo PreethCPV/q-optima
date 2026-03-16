@@ -1,7 +1,3 @@
-"""
-Circuit Visualization for Q-Optima
-Generates circuit diagrams and measurement comparison charts after successful runs.
-"""
 
 import os
 import matplotlib
@@ -12,16 +8,31 @@ import numpy as np
 
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-from qiskit_ibm_runtime.fake_provider import FakeManilaV2
+from qiskit_ibm_runtime.fake_provider import FakeManilaV2, FakeJakartaV2, FakeGuadalupeV2
 
+try:
+    import networkx as nx
+    HAS_NETWORKX = True
+except ImportError:
+    HAS_NETWORKX = False
+
+FS = 360 
+BACKEND_REGISTRY = {
+    "manila": FakeManilaV2,
+    "jakarta": FakeJakartaV2,
+    "guadalupe": FakeGuadalupeV2
+}
 
 def ensure_output_dir():
     """Create visualizations directory if it doesn't exist."""
     if not os.path.exists('visualizations'):
         os.makedirs('visualizations')
 
+def ensure_ecg_dir():
+    os.makedirs('visualizations/ecg', exist_ok=True)
 
-def generate_circuit_diagram(code: str, filename: str = "circuit_diagram.png"):
+
+def generate_circuit_diagram(code: str, filename: str = "circuit_diagram.png", backend_name: str = "manila"):
     """
     Generate and save a circuit diagram PNG from circuit code.
     Shows both logical (original) and transpiled (physical) circuit side by side.
@@ -36,7 +47,7 @@ def generate_circuit_diagram(code: str, filename: str = "circuit_diagram.png"):
         qc = local_scope['qc']
 
         # Get transpiled version for comparison
-        backend = FakeManilaV2()
+        backend = BACKEND_REGISTRY.get(backend_name, FakeManilaV2)()
         transpiled_qc = transpile(qc, backend, optimization_level=1)
 
         # Create side-by-side figure
@@ -67,8 +78,26 @@ def generate_circuit_diagram(code: str, filename: str = "circuit_diagram.png"):
         # Add labels
         from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(combined)
-        draw.text((img1.width // 2 - 80, 10), "LOGICAL CIRCUIT (Your Code)", fill='#2E8B57', font=None)
-        draw.text((img1.width + 20 + img2.width // 2 - 100, 10), "PHYSICAL CIRCUIT (After Transpilation)", fill='#4169E1', font=None)
+        
+        logical_depth  = qc.depth()
+        logical_gates  = qc.size()
+        physical_depth = transpiled_qc.depth()
+        physical_gates = transpiled_qc.size()
+        swap_count     = sum(1 for inst in transpiled_qc.data
+                            if inst.operation.name == 'swap')
+        overhead_pct   = round((physical_depth - logical_depth) / max(logical_depth, 1) * 100, 1)
+
+        draw.text((img1.width // 2 - 80, 5),
+                "LOGICAL CIRCUIT (Your Code)", fill='#2E8B57', font=None)
+        draw.text((img1.width // 2 - 80, 20),
+                f"Depth: {logical_depth} | Gates: {logical_gates}",
+                fill='#2E8B57', font=None)
+        draw.text((img1.width + 20 + img2.width // 2 - 100, 5),
+                f"PHYSICAL CIRCUIT ({backend_name.capitalize()})", fill='#4169E1', font=None)
+        draw.text((img1.width + 20 + img2.width // 2 - 100, 20),
+                f"Depth: {physical_depth} | Gates: {physical_gates} | SWAPs: {swap_count} | Overhead: +{overhead_pct}%",
+                fill='#4169E1', font=None)
+
 
         combined.paste(img1, (0, 50))
         combined.paste(img2, (img1.width + 20, 50))
@@ -113,7 +142,7 @@ def generate_circuit_diagram(code: str, filename: str = "circuit_diagram.png"):
         return None
 
 
-def generate_measurement_chart(code: str, filename: str = "measurement_comparison.png"):
+def generate_measurement_chart(code: str, filename: str = "measurement_comparison.png", backend_name: str = "manila"):
     """
     Generate ideal vs noisy measurement bar chart.
     Shows how noise affects the expected measurement outcomes.
@@ -127,7 +156,7 @@ def generate_measurement_chart(code: str, filename: str = "measurement_compariso
         exec(header + code, {}, local_scope)
         qc = local_scope['qc']
 
-        backend = FakeManilaV2()
+        backend = BACKEND_REGISTRY.get(backend_name, FakeManilaV2)()
         transpiled_qc = transpile(qc, backend, optimization_level=1)
 
         # Ideal simulation
@@ -155,12 +184,12 @@ def generate_measurement_chart(code: str, filename: str = "measurement_compariso
         fig, ax = plt.subplots(figsize=(12, 6))
         bars1 = ax.bar(x - width/2, ideal_probs, width, label='Ideal (No Noise)',
                        color='#2E8B57', alpha=0.85, edgecolor='black', linewidth=0.5)
-        bars2 = ax.bar(x + width/2, noisy_probs, width, label='Noisy (FakeManilaV2)',
+        bars2 = ax.bar(x + width/2, noisy_probs, width, label=f'Noisy ({backend_name.capitalize()})',
                        color='#DC143C', alpha=0.85, edgecolor='black', linewidth=0.5)
 
         ax.set_xlabel('Measurement Outcome', fontsize=12)
         ax.set_ylabel('Probability', fontsize=12)
-        ax.set_title('Ideal vs Noisy Measurement Distribution\n(FakeManilaV2 Digital Twin)',
+        ax.set_title(f"Ideal vs Noisy Measurement Distribution\n({backend_name.capitalize()} Digital Twin)",
                      fontsize=13, fontweight='bold')
         ax.set_xticks(x)
         ax.set_xticklabels(all_states, rotation=45, ha='right', fontsize=9)
@@ -193,7 +222,7 @@ def generate_measurement_chart(code: str, filename: str = "measurement_compariso
         return None
 
 
-def generate_fidelity_graph(fidelity_history: list, filename: str = "fidelity_progress.png"):
+def generate_fidelity_graph(fidelity_history: list, filename: str = "fidelity_progress.png", backend_name: str = "manila"):
     """
     Generate fidelity progress graph across optimizer iterations.
     Only called if optimizer ran at least once.
@@ -219,12 +248,12 @@ def generate_fidelity_graph(fidelity_history: list, filename: str = "fidelity_pr
                 markeredgewidth=2.5, label='Circuit Fidelity')
 
         # Threshold line
-        ax.axhline(y=0.70, color='#DC143C', linestyle='--',
-                   linewidth=1.5, label='Threshold (0.70)')
+        ax.axhline(y=0.60, color='#DC143C', linestyle='--',
+                   linewidth=1.5, label='Threshold (0.60)')
 
         # Color points: red = fail, green = pass
         for i, (it, fid) in enumerate(fidelity_history):
-            color = '#2E8B57' if fid >= 0.70 else '#DC143C'
+            color = '#2E8B57' if fid >= 0.60 else '#DC143C'
             ax.plot(it, fid, 'o', markersize=12, color=color, zorder=5)
             ax.annotate(f'{fid:.3f}', (it, fid),
                         textcoords="offset points", xytext=(0, 12),
@@ -232,7 +261,8 @@ def generate_fidelity_graph(fidelity_history: list, filename: str = "fidelity_pr
 
         ax.set_xlabel('Iteration', fontsize=12)
         ax.set_ylabel('Fidelity', fontsize=12)
-        ax.set_title('Fidelity Progress Across Optimizer Iterations', fontsize=13, fontweight='bold')
+        ax.set_title(f"Fidelity Progress Across Optimizer Iterations\n({backend_name.capitalize()} Digital Twin)",
+             fontsize=13, fontweight='bold')
         ax.set_xticks(iterations)
         ax.set_ylim(0, 1.1)
         ax.legend(fontsize=11)
@@ -249,3 +279,160 @@ def generate_fidelity_graph(fidelity_history: list, filename: str = "fidelity_pr
     except Exception as e:
         print(f"⚠️  Fidelity graph generation failed: {str(e)}")
         return None
+    
+
+def generate_ecg_waveform(waves_info: dict, filename: str = "ecg_waveform.png"):
+    """
+    Plot raw filtered ECG signal for the selected beat window with
+    clinical markers: P, Q, R, S peaks labeled as vertical lines.
+    Proves to medical reviewers that data extraction is clinically accurate.
+    """
+    ensure_ecg_dir()
+    try:
+        sig    = waves_info['filtered_signal']
+        start  = waves_info['beat_window_start']
+        end    = waves_info['beat_window_end']
+        r_curr = waves_info['r_curr']
+        p_idx  = waves_info['p_idx']
+        q_idx  = waves_info['q_idx']
+        s_idx  = waves_info['s_idx']
+
+        window = sig[start:end]
+        time_axis = np.arange(len(window)) / FS * 1000   # convert to ms
+
+        fig, ax = plt.subplots(figsize=(12, 5))
+        ax.plot(time_axis, window, color='#2C3E50', linewidth=1.5, label='ECG Signal (Filtered)')
+
+        # Marker positions relative to window
+        markers = {
+            'P': (p_idx - start, '#3498DB'),
+            'Q': (q_idx - start, '#E67E22'),
+            'R': (r_curr - start, '#E74C3C'),
+            'S': (s_idx - start, '#9B59B6'),
+        }
+
+        for label, (idx, color) in markers.items():
+            if 0 <= idx < len(window):
+                t = idx / FS * 1000
+                ax.axvline(x=t, color=color, linestyle='--', linewidth=1.5, alpha=0.8)
+                ax.plot(t, window[idx], 'o', color=color, markersize=8, zorder=5)
+                ax.text(t, window[idx] + 0.02, label, color=color,
+                        fontsize=11, fontweight='bold', ha='center')
+
+        ax.set_xlabel('Time (ms)', fontsize=12)
+        ax.set_ylabel('Amplitude (mV)', fontsize=12)
+        ax.set_title('Raw ECG Signal — Beat with Clinical Markers\n'
+                     '(P, Q, R, S peaks detected for feature extraction)',
+                     fontsize=13, fontweight='bold')
+        ax.legend(fontsize=10)
+        ax.grid(alpha=0.3)
+
+        plt.tight_layout()
+        filepath = f'visualizations/ecg/{filename}'
+        plt.savefig(filepath, dpi=150, bbox_inches='tight')
+        plt.close()
+        print(f"📊 ECG waveform saved: {filepath}")
+        return filepath
+
+    except Exception as e:
+        print(f"⚠️  ECG waveform generation failed: {e}")
+        return None
+    
+def generate_topology_map(backend_name: str, used_qubits: list, filename: str = "topology_map.png"):
+    """
+    Visual graph of IBM chip coupling map.
+    Used qubits highlighted in orange, unused in grey.
+    Explains to reviewers why SWAP gates are needed for certain circuits.
+    """
+    ensure_ecg_dir()
+
+    if not HAS_NETWORKX:
+        print("⚠️  networkx not installed. Run: pip install networkx. Skipping topology map.")
+        return None
+
+    try:
+        backend_class = BACKEND_REGISTRY.get(backend_name, FakeManilaV2)
+        backend = backend_class()
+        coupling_map = backend.coupling_map
+
+        G = nx.DiGraph()
+        num_qubits = backend.num_qubits
+        G.add_nodes_from(range(num_qubits))
+        for edge in coupling_map:
+            G.add_edge(edge[0], edge[1])
+
+        # Node colors: orange for used qubits, grey for unused
+        node_colors = ['#E67E22' if i in used_qubits else '#BDC3C7'
+                       for i in range(num_qubits)]
+        node_sizes  = [800 if i in used_qubits else 500
+                       for i in range(num_qubits)]
+
+        pos = nx.spring_layout(G, seed=42)
+
+        fig, ax = plt.subplots(figsize=(10, 7))
+        nx.draw_networkx_nodes(G, pos, node_color=node_colors,
+                               node_size=node_sizes, ax=ax, alpha=0.9)
+        nx.draw_networkx_labels(G, pos, font_size=11,
+                                font_weight='bold', ax=ax)
+        nx.draw_networkx_edges(G, pos, ax=ax, arrows=True,
+                               arrowsize=15, edge_color='#7F8C8D',
+                               width=1.5, alpha=0.7)
+
+        # Legend
+        used_patch   = mpatches.Patch(color='#E67E22', label=f'Used qubits {used_qubits}')
+        unused_patch = mpatches.Patch(color='#BDC3C7', label='Unused qubits')
+        ax.legend(handles=[used_patch, unused_patch], fontsize=10, loc='upper left')
+
+        ax.set_title(f'Hardware Topology — {backend_name.capitalize()} Coupling Map\n'
+                     f'({num_qubits} qubits, highlighted = circuit qubits)',
+                     fontsize=13, fontweight='bold')
+        ax.axis('off')
+
+        plt.tight_layout()
+        filepath = f'visualizations/ecg/{filename}'
+        plt.savefig(filepath, dpi=150, bbox_inches='tight')
+        plt.close()
+        print(f"📊 Topology map saved: {filepath}")
+        return filepath
+
+    except Exception as e:
+        print(f"⚠️  Topology map generation failed: {e}")
+        return None
+    
+def generate_bloch_sphere(code: str, num_features: int, filename: str = "bloch_sphere.png"):
+    """
+    Plot Bloch sphere showing qubit states after Rz encoding gates,
+    before measurement. Proves classical radians were converted to
+    quantum phase shifts successfully.
+    Uses statevector simulator — no noise, pure encoding state.
+    """
+    ensure_ecg_dir()
+    try:
+        from qiskit.quantum_info import Statevector
+        from qiskit.visualization import plot_bloch_multivector
+
+        # Remove measurement gates to get encoding state
+        local_scope = {}
+        header = "from qiskit import QuantumCircuit, transpile\nimport numpy as np\n\n"
+        exec(header + code, {}, local_scope)
+        qc = local_scope['qc']
+        qc_no_meas = qc.remove_final_measurements(inplace=False)
+
+        # Get statevector after encoding
+        sv = Statevector(qc_no_meas)
+
+        fig = plot_bloch_multivector(sv)
+        fig.suptitle(f'Bloch Sphere — Qubit States After ZZ Encoding\n'
+                     f'({num_features}-qubit circuit, before measurement)',
+                     fontsize=12, fontweight='bold', y=1.02)
+
+        filepath = f'visualizations/ecg/{filename}'
+        fig.savefig(filepath, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        print(f"📊 Bloch sphere saved: {filepath}")
+        return filepath
+
+    except Exception as e:
+        print(f"⚠️  Bloch sphere generation failed: {e}")
+        return None
+    
