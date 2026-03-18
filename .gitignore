@@ -5,9 +5,11 @@ Thumbs.db
 # --- Build & Dependency Artifacts ---
 # Python Virtual Environments
 venv/
-.env/
 .venv/
 .tox/
+env/
+.env
+
 
 # Compiled Python files
 __pycache__/
