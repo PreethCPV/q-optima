@@ -1,0 +1,12 @@
+{
+  "counts": {
+    "11": 54,
+    "00": 40,
+    "10": 2,
+    "01": 4
+  },
+  "shots": 100,
+  "backend_name": "ibm_fez",
+  "job_id": "d74n3s8qhmps73b4ajng",
+  "timestamp": "2026-03-30T00:09:52.954959"
+}

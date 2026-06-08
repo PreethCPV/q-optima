@@ -1,0 +1,46 @@
+{
+  "timestamp": "20260318_194939",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "2",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.8975,
+  "fidelity_history": [
+    [
+      1,
+      0.8975
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 7,
+    "logical_gates": 17,
+    "physical_depth": 15,
+    "total_gates": 31,
+    "swap_count": 0,
+    "final_fidelity": 0.8975
+  },
+  "ideal_counts": {
+    "1011": 1024
+  },
+  "noisy_counts": {
+    "1011": 899,
+    "0001": 9,
+    "1010": 27,
+    "1001": 25,
+    "0011": 26,
+    "1111": 28,
+    "1000": 1,
+    "0111": 1,
+    "0101": 1,
+    "1101": 2,
+    "1110": 3,
+    "0000": 1,
+    "0010": 1
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nqc = QuantumCircuit(5, 4)\n\n# Apply H gate to qubits 0,1,2,3\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\n\n# Apply X gate then H gate to ancilla qubit 4\nqc.x(4)\nqc.h(4)\n\n# Apply CNOT gates\nqc.cx(0, 4)\nqc.cx(1, 4)\nqc.cx(3, 4)\n\n# Apply H gate again to qubits 0,1,2,3\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\n\n# Measure ONLY input qubits 0,1,2,3\nqc.measure([0, 1, 2, 3], [0, 1, 2, 3])",
+  "extra_info": {
+    "hidden_string": "1011",
+    "expected": "01101"
+  }
+}

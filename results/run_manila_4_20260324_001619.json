@@ -1,0 +1,78 @@
+{
+  "timestamp": "20260324_001619",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "4",
+  "num_features": 4,
+  "success": true,
+  "final_fidelity": 0.9149,
+  "fidelity_history": [
+    [
+      1,
+      0.9149
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 20,
+    "logical_gates": 38,
+    "physical_depth": 22,
+    "total_gates": 46,
+    "swap_count": 0,
+    "final_fidelity": 0.9149
+  },
+  "ideal_counts": {
+    "0000": 9,
+    "1000": 224,
+    "1110": 626,
+    "1100": 14,
+    "0111": 3,
+    "1101": 20,
+    "1001": 30,
+    "1011": 17,
+    "1111": 48,
+    "0110": 26,
+    "0010": 4,
+    "0011": 1,
+    "0100": 1,
+    "1010": 1
+  },
+  "noisy_counts": {
+    "1110": 469,
+    "1000": 171,
+    "0110": 29,
+    "1111": 57,
+    "1011": 37,
+    "0010": 18,
+    "1101": 33,
+    "1010": 81,
+    "1100": 71,
+    "0011": 4,
+    "0111": 3,
+    "1001": 33,
+    "0000": 12,
+    "0101": 2,
+    "0001": 3,
+    "0100": 1
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nnum_qubits = 4\nnum_clbits = 4\nqc = QuantumCircuit(num_qubits, num_clbits)\n\n# Step 1: Apply H gate to all qubits 0, 1, 2, 3\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\n\n# Step 2: Apply Rz(2.5453) to qubit 0, Rz(0.1745) to qubit 1, Rz(2.9512) to qubit 2, Rz(2.7672) to qubit 3\nqc.rz(2.5453, 0)\nqc.rz(0.1745, 1)\nqc.rz(2.9512, 2)\nqc.rz(2.7672, 3)\n\n# Step 3: Apply CNOT(0,1), then Rz(3.5386) to qubit 1, then CNOT(0,1)\nqc.cx(0, 1)\nqc.rz(3.5386, 1)\nqc.cx(0, 1)\n\n# Step 4: Apply CNOT(1,2), then Rz(1.1299) to qubit 2, then CNOT(1,2)\nqc.cx(1, 2)\nqc.rz(1.1299, 2)\nqc.cx(1, 2)\n\n# Step 5: Apply CNOT(2,3), then Rz(0.1426) to qubit 3, then CNOT(2,3)\nqc.cx(2, 3)\nqc.rz(0.1426, 3)\nqc.cx(2, 3)\n\n# Step 6: Repeat Steps 1-5 exactly once more (second ZZ layer)\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\n\nqc.rz(2.5453, 0)\nqc.rz(0.1745, 1)\nqc.rz(2.9512, 2)\nqc.rz(2.7672, 3)\n\nqc.cx(0, 1)\nqc.rz(3.5386, 1)\nqc.cx(0, 1)\n\nqc.cx(1, 2)\nqc.rz(1.1299, 2)\nqc.cx(1, 2)\n\nqc.cx(2, 3)\nqc.rz(0.1426, 3)\nqc.cx(2, 3)\n\n# Step 7: Measure qubits 0,1,2,3 using qc.measure([0,1,2,3],[0,1,2,3])\nqc.measure([0, 1, 2, 3], [0, 1, 2, 3])",
+  "extra_info": {
+    "ecg_info": {
+      "record_id": "100",
+      "beat_label": "Normal",
+      "feature_names": [
+        "RR Interval (s)",
+        "QRS Duration (s)",
+        "PR Interval (s)",
+        "ST Deviation (mV)"
+      ],
+      "features": [
+        2.545271825825064,
+        0.1745329251994332,
+        2.951193098826775,
+        2.767200064135297
+      ],
+      "num_features": 4,
+      "class_name": "Normal"
+    }
+  }
+}

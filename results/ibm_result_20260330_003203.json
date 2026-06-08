@@ -1,0 +1,12 @@
+{
+  "counts": {
+    "11": 43,
+    "00": 54,
+    "01": 2,
+    "10": 1
+  },
+  "shots": 100,
+  "backend_name": "ibm_marrakesh",
+  "job_id": "d74ne90qhmps73b4autg",
+  "timestamp": "2026-03-30T00:32:03.618434"
+}

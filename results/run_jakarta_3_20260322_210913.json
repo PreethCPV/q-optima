@@ -1,0 +1,46 @@
+{
+  "timestamp": "20260322_210913",
+  "backend_key": "jakarta",
+  "backend_full_name": "FakeJakartaV2",
+  "mode": "3",
+  "num_features": 2,
+  "success": false,
+  "final_fidelity": 0.0,
+  "fidelity_history": [],
+  "metrics": {
+    "logical_depth": 11,
+    "logical_gates": 16,
+    "physical_depth": 13,
+    "total_gates": 20,
+    "swap_count": 0,
+    "final_fidelity": 0.0
+  },
+  "ideal_counts": {
+    "10": 485,
+    "00": 465,
+    "01": 46,
+    "11": 28
+  },
+  "noisy_counts": {
+    "00": 442,
+    "10": 470,
+    "01": 55,
+    "11": 57
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\nqc = QuantumCircuit(2, 2)\nqc.h(0)\nqc.h(1)\nqc.rz(2.7925, 0)\nqc.rz(7.854, 1)\nqc.cx(0, 1)\nqc.rz(-2.7416, 1)\nqc.cx(0, 1)\nqc.h(0)\nqc.h(1)\nqc.rz(2.7925, 0)\nqc.rz(7.854, 1)\nqc.cx(0, 1)\nqc.rz(-2.7416, 1)\nqc.cx(0, 1)\nqc.measure([0, 1], [0, 1])",
+  "extra_info": {
+    "zz_info": {
+      "features": [
+        1.3962634015954638,
+        3.9269908169872405
+      ],
+      "feature_names": [
+        "sepal length (cm)",
+        "sepal width (cm)"
+      ],
+      "class_name": "setosa",
+      "encoding": "ZZ Feature Map (2 repetitions)",
+      "num_qubits": 2
+    }
+  }
+}

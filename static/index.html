@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-Optima | Digital Twin Compiler</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <canvas id="quantumMesh"></canvas>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">Q</div>
+                <h1>Q-Optima</h1>
+            </div>
+            <p class="subtitle">Digital Twin Quantum Compiler</p>
+
+            <div class="nav-links">
+                <a href="#" class="active"><i class="icon">⚛️</i> Workspace</a>
+                <a href="#"><i class="icon">📚</i> Guidelines</a>
+                <a href="#"><i class="icon">⚙️</i> Settings</a>
+            </div>
+
+            <div class="sidebar-status" style="margin-bottom: 1rem;">
+                <div class="status-label">Pipeline Workflow:</div>
+                <select id="workflowSelector" class="glass-select">
+                    <option value="local">Local Simulation (Digital Twin)</option>
+                    <option value="cloud">Cloud Execution (IBM Quantum)</option>
+                </select>
+            </div>
+
+            <div class="sidebar-status">
+                <div class="status-label">Select Target QPU:</div>
+                <select id="backendSelector" class="glass-select">
+                    <option value="FakeManilaV2">FakeManila (5Q)</option>
+                    <option value="FakeJakartaV2">FakeJakarta (7Q)</option>
+                    <option value="FakeGuadalupeV2">FakeGuadalupe (16Q)</option>
+                    <option value="ibmq_qasm_simulator">IBM Cloud Simulator (32Q)</option>
+                    <option value="ibm_brisbane">IBM Brisbane (127Q)</option>
+                    <option value="ibm_osaka">IBM Osaka (127Q)</option>
+                    <option value="hybrid_brisbane">Hybrid Brisbane (127Q Local)</option>
+                </select>
+                <div class="status-indicator">
+                    <span class="dot online"></span>
+                    <span id="activeBackend">QPU: FakeManilaV2</span>
+                </div>
+            </div>
+
+            <div class="sidebar-status" style="margin-top: 1rem;">
+                <div class="status-label">Select Task Mode:</div>
+                <select id="modeSelector" class="glass-select">
+                    <option value="1">Free Input</option>
+                    <option value="2">Bernstein-Vazirani</option>
+                    <option value="3">ZZ Feature Map (Iris)</option>
+                    <option value="4">ECG Arrhythmia (MIT-BIH)</option>
+                </select>
+            </div>
+
+            <div class="sidebar-status" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <div class="status-label" style="color:#60a5fa;">☁️ IBM Quantum Cloud</div>
+                <select id="ibmModeSelector" class="glass-select" style="margin-bottom: 0.5rem;">
+                    <option value="simulator">Cloud Simulator (Free)</option>
+                    <option value="least_busy_qpu">Least Busy QPU (Queue)</option>
+                </select>
+                <button id="runIbmBtn" class="primary-btn" style="width: 100%; background: #2563eb;" disabled>Execute on IBM</button>
+                <div id="ibmStatus" style="font-size: 0.8rem; margin-top: 0.5rem; color: #9ca3af; text-align: center;">Compile a circuit first</div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Chat Interface (Memory context driven) -->
+            <section class="chat-section glass-panel">
+                <div class="chat-header">
+                    <h2>Quantum Assistant</h2>
+                    <div class="header-actions">
+                        <div id="fidelityGaugeContainer" class="fidelity-gauge" title="Latest Circuit Fidelity">
+                            <svg viewBox="0 0 100 50">
+                                <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#333" stroke-width="8"
+                                    stroke-linecap="round" />
+                                <path id="gaugePath" d="M 10 45 A 35 35 0 0 1 10 45" fill="none" stroke="var(--primary)"
+                                    stroke-width="8" stroke-linecap="round" />
+                                <text x="50" y="42" id="gaugeText" text-anchor="middle" fill="white" font-size="12"
+                                    font-weight="bold">0%</text>
+                            </svg>
+                        </div>
+                        <span class="badge" title="RAG Context Active">RAG Enabled</span>
+                        <button id="voiceToggle" class="glass-select" style="padding: 4px 10px; cursor: pointer; font-size: 0.8rem;" title="Toggle Voice Assistant">
+                            🔊 Voice: ON
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-history" id="chatHistory">
+                    <div class="message assistant">
+                        <div class="avatar">Q</div>
+                        <div class="message-content">
+                            Hello! I am Q-Optima. Describe the quantum circuit you want to build, and I will compile it
+                            against the Digital Twin's hardware topology. My memory is active, so we can iterate on the
+                            design.
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <!-- Mode 1 Input -->
+                    <textarea id="userInput" placeholder="e.g., 'Create a Bell state between qubit 0 and 4'..." rows="1"></textarea>
+                    
+                    <!-- Mode 2 Input -->
+                    <input type="text" id="bvInput" placeholder="Hidden binary (e.g. 1011)" style="display:none; width:100%; padding:0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white;" class="dynamic-input">
+                    
+                    <!-- Mode 3 Input -->
+                    <input type="number" id="zzInput" placeholder="Iris index (0-149)" style="display:none; width:100%; padding:0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white;" min="0" max="149" class="dynamic-input">
+                    
+                    <!-- Mode 4 Input -->
+                    <div id="ecgInputs" style="display:none; gap: 0.5rem; width:100%;" class="dynamic-input">
+                        <input type="text" id="ecgRecord" placeholder="Record (e.g. 100)" value="100" style="flex:1; padding:0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white;">
+                        <input type="number" id="ecgBeat" placeholder="Beat (10)" value="10" style="flex:1; padding:0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white;">
+                        <input type="number" id="ecgFeatures" placeholder="Feats (2/4)" value="2" style="flex:1; padding:0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white;">
+                    </div>
+
+                    <button id="sendBtn" class="primary-btn">Compile</button>
+                </div>
+            </section>
+
+            <!-- Results & Visualizations area -->
+            <section class="results-section">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="terminal">Live Execution</button>
+                    <button class="tab-btn" data-tab="code">Generated Code</button>
+                    <button class="tab-btn" data-tab="results">Results JSON</button>
+                    <button class="tab-btn" data-tab="visuals">Visualizations</button>
+                    <button class="tab-btn" data-tab="logs">Raw Logs</button>
+                </div>
+
+                <!-- Terminal Tab -->
+                <div id="terminal" class="tab-content active glass-panel terminal-window">
+                    <div class="terminal-header">
+                        <div class="mac-btns"><span></span><span></span><span></span></div>
+                        <span class="terminal-title">agent-pipeline // bash</span>
+                    </div>
+                    <pre id="terminalOutput">Waiting for task...</pre>
+                </div>
+
+                <!-- Code Tab -->
+                <div id="code" class="tab-content glass-panel code-window">
+                    <pre><code id="codeOutput" class="language-python"># Qiskit code will appear here...</code></pre>
+                </div>
+
+                <!-- Results Tab -->
+                <div id="results" class="tab-content glass-panel code-window">
+                    <pre><code id="resultsOutput" class="language-json">// Results JSON output...</code></pre>
+                </div>
+
+                <!-- Visualizations Tab -->
+                <div id="visuals" class="tab-content glass-panel visuals-window">
+                    <div class="visuals-grid" id="visualsGrid">
+                        <div class="empty-state">No visualizations generated yet.</div>
+                    </div>
+                </div>
+
+                <!-- Logs Tab -->
+                <div id="logs" class="tab-content glass-panel logs-window">
+                    <div class="log-selector">
+                        <select id="logSelect">
+                            <option value="architect">Architect Details</option>
+                            <option value="verifier">Verifier Details</option>
+                            <option value="optimizer">Optimizer Details</option>
+                        </select>
+                    </div>
+                    <pre id="logOutput">Run a query to see internal agent logs.</pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+{
+  "timestamp": "20260316_020928",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "2",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.62,
+  "fidelity_history": [
+    [
+      1,
+      0.62
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 7,
+    "logical_gates": 17,
+    "physical_depth": 16,
+    "total_gates": 31,
+    "swap_count": 0,
+    "final_fidelity": 0.62
+  },
+  "ideal_counts": {
+    "1011": 1024
+  },
+  "noisy_counts": {
+    "1011": 876,
+    "0001": 17,
+    "1010": 15,
+    "1001": 34,
+    "1111": 32,
+    "0011": 42,
+    "0111": 3,
+    "0000": 1,
+    "1100": 1,
+    "1101": 1,
+    "0010": 1,
+    "0101": 1
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\nqc = QuantumCircuit(5, 4)\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\nqc.x(4)\nqc.h(4)\nqc.cx(0, 4)\nqc.cx(1, 4)\nqc.cx(3, 4)\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\nqc.measure([0, 1, 2, 3], [0, 1, 2, 3])",
+  "extra_info": {
+    "hidden_string": "1011",
+    "expected": "01101"
+  }
+}

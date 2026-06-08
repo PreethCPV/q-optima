@@ -1,0 +1,46 @@
+{
+  "timestamp": "20260324_001428",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "1",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.803,
+  "fidelity_history": [
+    [
+      1,
+      0.803
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 3,
+    "logical_gates": 7,
+    "physical_depth": 5,
+    "total_gates": 9,
+    "swap_count": 0,
+    "final_fidelity": 0.803
+  },
+  "ideal_counts": {
+    "00000 00000": 519,
+    "00011 00000": 505
+  },
+  "noisy_counts": {
+    "00001 00000": 22,
+    "00000 00000": 441,
+    "10011 00000": 7,
+    "00011 00000": 412,
+    "00100 00000": 36,
+    "00010 00000": 41,
+    "00111 00000": 41,
+    "01011 00000": 5,
+    "00101 00000": 2,
+    "10110 00000": 1,
+    "10000 00000": 8,
+    "00110 00000": 3,
+    "01000 00000": 3,
+    "10001 00000": 1,
+    "01001 00000": 1
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nnum_qubits = 5\nnum_clbits = 5\nqc = QuantumCircuit(num_qubits, num_clbits)\n\n# Apply H gate to first qubit\nqc.h(0)\n\n# Apply CNOT directly\nqc.cx(0, 1)\n\n# Add measurements\nqc.measure_all()",
+  "extra_info": {}
+}

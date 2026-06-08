@@ -1,0 +1,51 @@
+{
+  "timestamp": "20260316_173149",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "2",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.749,
+  "fidelity_history": [
+    [
+      1,
+      0.5781
+    ],
+    [
+      2,
+      0.749
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 11,
+    "logical_gates": 23,
+    "physical_depth": 15,
+    "total_gates": 40,
+    "swap_count": 0,
+    "final_fidelity": 0.749
+  },
+  "ideal_counts": {
+    "1100": 1024
+  },
+  "noisy_counts": {
+    "0011": 1,
+    "1100": 783,
+    "1000": 105,
+    "0000": 15,
+    "0100": 26,
+    "1101": 34,
+    "1010": 18,
+    "1110": 28,
+    "1111": 3,
+    "1011": 2,
+    "0010": 3,
+    "1001": 2,
+    "0101": 2,
+    "0110": 2
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\nqc = QuantumCircuit(5, 4)\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\nqc.x(4)\nqc.h(4)\nqc.cx(0, 1)\nqc.cx(1, 2)\nqc.cx(2, 3)\nqc.cx(3, 4)\nqc.cx(1, 2)\nqc.cx(2, 3)\nqc.cx(3, 4)\nqc.cx(2, 3)\nqc.cx(3, 4)\nqc.h(0)\nqc.h(1)\nqc.h(2)\nqc.h(3)\nqc.measure([0, 1, 2, 3], [0, 1, 2, 3])",
+  "extra_info": {
+    "hidden_string": "1111",
+    "expected": "01111"
+  }
+}

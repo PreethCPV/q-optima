@@ -1,0 +1,52 @@
+{
+  "timestamp": "20260324_001240",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "4",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.9939,
+  "fidelity_history": [
+    [
+      1,
+      0.9939
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 11,
+    "logical_gates": 16,
+    "physical_depth": 13,
+    "total_gates": 20,
+    "swap_count": 0,
+    "final_fidelity": 0.9939
+  },
+  "ideal_counts": {
+    "10": 888,
+    "11": 95,
+    "01": 35,
+    "00": 6
+  },
+  "noisy_counts": {
+    "10": 834,
+    "00": 35,
+    "11": 115,
+    "01": 40
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nqc = QuantumCircuit(2, 2)\n\n# Step 1: Apply H gate to qubits 0 and 1\nqc.h(0)\nqc.h(1)\n\n# Step 2: Apply Rz(2.5453) to qubit 0 and Rz(0.1745) to qubit 1\nqc.rz(2.5453, 0)\nqc.rz(0.1745, 1)\n\n# Step 3: Apply CNOT from qubit 0 to qubit 1\nqc.cx(0, 1)\n\n# Step 4: Apply Rz(3.5386) to qubit 1 (ZZ interaction angle)\nqc.rz(3.5386, 1)\n\n# Step 5: Apply CNOT from qubit 0 to qubit 1\nqc.cx(0, 1)\n\n# Step 6: Repeat Steps 1-5 exactly once more (second ZZ layer)\nqc.h(0)\nqc.h(1)\nqc.rz(2.5453, 0)\nqc.rz(0.1745, 1)\nqc.cx(0, 1)\nqc.rz(3.5386, 1)\nqc.cx(0, 1)\n\n# Step 7: Measure qubits 0 and 1\nqc.measure([0, 1], [0, 1])",
+  "extra_info": {
+    "ecg_info": {
+      "record_id": "100",
+      "beat_label": "Normal",
+      "feature_names": [
+        "RR Interval (s)",
+        "QRS Duration (s)"
+      ],
+      "features": [
+        2.545271825825064,
+        0.1745329251994332
+      ],
+      "num_features": 2,
+      "class_name": "Normal"
+    }
+  }
+}

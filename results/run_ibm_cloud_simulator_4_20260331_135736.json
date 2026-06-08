@@ -1,0 +1,47 @@
+{
+  "timestamp": "20260331_135736",
+  "backend_key": "ibm_cloud_simulator",
+  "backend_full_name": "IBM Cloud Simulator",
+  "mode": "4",
+  "num_features": 2,
+  "success": false,
+  "final_fidelity": 0.0,
+  "fidelity_history": [],
+  "metrics": {
+    "logical_depth": 11,
+    "logical_gates": 16,
+    "physical_depth": 13,
+    "total_gates": 20,
+    "swap_count": 0,
+    "final_fidelity": 0.0
+  },
+  "ideal_counts": {
+    "10": 512,
+    "01": 476,
+    "00": 13,
+    "11": 23
+  },
+  "noisy_counts": {
+    "01": 422,
+    "10": 496,
+    "00": 60,
+    "11": 46
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nnum_qubits = 5\nnum_clbits = 2\nqc = QuantumCircuit(num_qubits, num_clbits)\n\n# Apply H gate to qubits 0 and 1\nqc.h(0)\nqc.h(1)\n\n# Apply Rz(2.8507) to qubit 0 and Rz(0.2836) to qubit 1\nqc.rz(2.8507, 0)\nqc.rz(0.2836, 1)\n\n# Apply CNOT from qubit 0 to qubit 1\nqc.cx(0, 1)\n\n# Apply Rz(1.6627) to qubit 1 (ZZ interaction angle)\nqc.rz(1.6627, 1)\n\n# Apply CNOT from qubit 0 to qubit 1\nqc.cx(0, 1)\n\n# Repeat Steps 1-5 exactly once more (second ZZ layer)\nqc.h(0)\nqc.h(1)\nqc.rz(2.8507, 0)\nqc.rz(0.2836, 1)\nqc.cx(0, 1)\nqc.rz(1.6627, 1)\nqc.cx(0, 1)\n\n# Measure qubits 0 and 1 using qc.measure([0, 1], [0, 1])\nqc.measure([0, 1], [0, 1])",
+  "extra_info": {
+    "ecg_info": {
+      "record_id": "100",
+      "beat_label": "Normal",
+      "feature_names": [
+        "RR Interval (s)",
+        "QRS Duration (s)"
+      ],
+      "features": [
+        2.850704444924072,
+        0.28361600344907867
+      ],
+      "num_features": 2,
+      "class_name": "Normal"
+    }
+  }
+}
