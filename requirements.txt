@@ -26,3 +26,7 @@ neurokit2
 scipy
 
 networkx
+matplotlib
+
+qiskit
+qiskit-ibm-runtime

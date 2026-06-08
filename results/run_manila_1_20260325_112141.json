@@ -1,0 +1,50 @@
+{
+  "timestamp": "20260325_112141",
+  "backend_key": "manila",
+  "backend_full_name": "FakeManilaV2",
+  "mode": "1",
+  "num_features": 2,
+  "success": true,
+  "final_fidelity": 0.8369,
+  "fidelity_history": [
+    [
+      1,
+      0.8369
+    ]
+  ],
+  "metrics": {
+    "logical_depth": 7,
+    "logical_gates": 11,
+    "physical_depth": 14,
+    "total_gates": 18,
+    "swap_count": 0,
+    "final_fidelity": 0.8369
+  },
+  "ideal_counts": {
+    "10000 00000": 513,
+    "00000 00000": 511
+  },
+  "noisy_counts": {
+    "00000 00000": 441,
+    "00001 00000": 65,
+    "10001 00000": 34,
+    "00100 00000": 9,
+    "10000 00000": 401,
+    "00010 00000": 9,
+    "10010 00000": 12,
+    "11001 00000": 2,
+    "01000 00000": 14,
+    "11100 00000": 2,
+    "00011 00000": 2,
+    "11000 00000": 10,
+    "01011 00000": 1,
+    "10110 00000": 1,
+    "11010 00000": 2,
+    "01100 00000": 2,
+    "10100 00000": 13,
+    "10101 00000": 3,
+    "01001 00000": 1
+  },
+  "circuit_code": "from qiskit import QuantumCircuit\n\n# Define correct qubit/clbit dimensions based on the user request\nnum_qubits = 5\nnum_clbits = 5\nqc = QuantumCircuit(num_qubits, num_clbits)\n\n# Apply H gate to first qubit: qc.h(first_qubit)\nqc.h(0)\n\n# Apply CNOT directly: qc.cx(first_qubit, second_qubit)\n# Since qubit 0 and qubit 4 are not directly connected, we need to swap them\n# Find a path from qubit 0 to qubit 4 using the coupling map\n# One possible path is: qubit 0 -> qubit 1 -> qubit 2 -> qubit 3 -> qubit 4\nqc.swap(0, 1)\nqc.swap(1, 2)\nqc.swap(2, 3)\nqc.swap(3, 4)\n\n# Now qubit 0 and qubit 4 are adjacent, apply CNOT\nqc.cx(0, 4)\n\n# Add measurements: qc.measure_all()\nqc.measure_all()",
+  "extra_info": {}
+}

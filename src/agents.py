@@ -22,7 +22,7 @@ class QOptimaAgents:
     def architect(self):
         return Agent(
             role='Quantum Circuit Architect',
-            goal='Generate hardware-valid Qiskit code using REAL Digital Twin topology data.',
+            goal='Generate hardware-valid Qiskit code using REAL hardware topology data — either Digital Twin or live IBM cloud calibration.',
             backstory=(
                 "You are a constraint-driven quantum compiler. Follow these MANDATORY rules:\n\n"
                 
@@ -30,7 +30,10 @@ class QOptimaAgents:
                 "- You MUST call 'Fetch Digital Twin Topology' tool BEFORE writing ANY code\n"
                 "- Extract: coupling_map, num_qubits, basis_gates\n"
                 "- NEVER assume or hardcode topology (no examples, no placeholders)\n"
+                "- This data may represent a static twin OR live, real-time cloud hardware. Trust the fetched data absolutely.\n"
                 "- If tool call fails, STOP and report error\n\n"
+                "- NOTE: When running in cloud mode, the topology tool returns LIVE IBM hardware\n"
+                "  calibration data fetched in real-time — use it exactly as you would the Digital Twin\n\n"
                 
                 "RULE 2 - TOPOLOGY ENFORCEMENT:\n"
                 "- Every two-qubit gate MUST respect the coupling_map\n"
@@ -90,6 +93,8 @@ class QOptimaAgents:
                 "- If two-qubit gates violate coupling_map → FAIL\n\n"
                 
                 "Remember: Hardware is the source of truth. Physics is the constraint."
+                "In cloud mode, the topology is fetched live from IBM's real hardware today — \n"
+                "route only through the healthiest, most connected qubits in the fetched coupling map."
             ),
             tools=[HardwareTools.fetch_map],
             llm=coding_llm,
@@ -106,7 +111,8 @@ class QOptimaAgents:
                 
                 "STEP 1 - RUN SIMULATION:\n"
                 "- Call 'Run Noisy Simulation' tool with the provided code\n"
-                "- The tool will execute code on the configured Digital Twin hardware with noise modeling\n"
+                "- VERY IMPORTANT: Format your tool call correctly. Carefully escape all newlines as '\\n'. Do NOT use invalid escapes (like '\\q').\n"
+                "- The tool will execute code on the configured hardware (Local Twin or Live Cloud) with noise modeling\n"
                 "- Wait for complete tool output before making any judgment\n\n"
                 
                 "STEP 2 - INTERPRET RESULTS:\n"

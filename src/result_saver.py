@@ -182,4 +182,4 @@ def save_run_results(
         json.dump(result, f, indent=2)
 
     print(f"💾 Run results saved: {filename}")
-    return filename
+    return result

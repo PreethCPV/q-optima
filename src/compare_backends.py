@@ -231,6 +231,7 @@ def plot_radar_chart(results: list, prefix: str=""):
         norm_noise      = 1 - (error_rate           / max_error)
 
         values = [norm_fidelity, norm_depth, norm_gates, norm_swaps, norm_noise]
+        type(values)
         values += values[:1]   # close polygon
 
         color = BACKEND_COLORS.get(bk, '#888888')
@@ -428,8 +429,8 @@ def plot_optimizer_convergence(results: list):
         color = BACKEND_COLORS.get(bk, '#888888')
         label = BACKEND_LABELS.get(bk, bk)
         history = r['fidelity_history']   # list of [iteration, fidelity]
-        iterations = [h[0] for h in history]
-        fidelities  = [h[1] for h in history]
+        iterations = [h[0] for h in history if isinstance(h, (list, tuple)) and len(h) >= 2]
+        fidelities  = [h[1] for h in history if isinstance(h, (list, tuple)) and len(h) >= 2]
         ax.step(iterations, fidelities, where='post', color=color,
                 label=label, linewidth=2.5)
         ax.plot(iterations, fidelities, 'o', color=color, markersize=7)
@@ -457,6 +458,128 @@ def plot_optimizer_convergence(results: list):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def plot_compilation_improvement(results: list, prefix: str = ""):
+    """
+    Grouped bar chart comparing logical (unoptimized) vs physical (Q-Optima compiled)
+    circuit metrics per backend.
+    
+    Shows physical depth and total gate count before and after compilation,
+    proving Q-Optima adds value over naive uncompiled circuits.
+    
+    Metrics compared:
+      - Logical Depth    vs Physical Depth     (circuit layers)
+      - Logical Gates    vs Total Gates        (gate count after transpilation)
+    """
+    backends_with_metrics = [r for r in results if 'metrics' in r and r['metrics']['logical_depth'] > 0]
+    if not backends_with_metrics:
+        print("⚠️  No metrics data found. Skipping compilation improvement chart.")
+        return
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig.suptitle('Q-Optima Compilation Impact: Logical vs Physical Circuit Metrics\n'
+                 '(Proves hardware-aware compilation overhead per backend)',
+                 fontsize=13, fontweight='bold')
+
+    backend_labels = [BACKEND_LABELS.get(r['backend_key'], r['backend_key'])
+                      for r in backends_with_metrics]
+    x = np.arange(len(backend_labels))
+    width = 0.35
+
+    # ── Left panel: Circuit Depth ─────────────────────────────────────────────
+    logical_depths  = [r['metrics']['logical_depth']  for r in backends_with_metrics]
+    physical_depths = [r['metrics']['physical_depth'] for r in backends_with_metrics]
+
+    bars1 = axes[0].bar(x - width/2, logical_depths,  width,
+                        label='Logical Depth (Uncompiled)',
+                        color='#2E86AB', alpha=0.85, edgecolor='black', linewidth=0.8)
+    bars2 = axes[0].bar(x + width/2, physical_depths, width,
+                        label='Physical Depth (Q-Optima Compiled)',
+                        color='#E84855', alpha=0.85, edgecolor='black', linewidth=0.8)
+
+    # Annotate bars with values and overhead percentage
+    for bar, log, phys in zip(bars2, logical_depths, physical_depths):
+        overhead = round((phys - log) / max(log, 1) * 100, 1)
+        axes[0].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 0.3,
+                     f'+{overhead}%',
+                     ha='center', va='bottom', fontsize=8,
+                     color='#E84855', fontweight='bold')
+
+    for bar, val in zip(bars1, logical_depths):
+        axes[0].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 0.3,
+                     str(val),
+                     ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    for bar, val in zip(bars2, physical_depths):
+        axes[0].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 1.5,
+                     str(val),
+                     ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(backend_labels, fontsize=8)
+    axes[0].set_ylabel('Circuit Depth (Layers)', fontsize=11)
+    axes[0].set_title('Circuit Depth: Logical vs Physical', fontsize=11, fontweight='bold')
+    axes[0].legend(fontsize=9)
+    axes[0].grid(axis='y', alpha=0.3)
+    axes[0].set_ylim(0, max(physical_depths) * 1.3)
+
+    # ── Right panel: Gate Count ───────────────────────────────────────────────
+    logical_gates = [r['metrics']['logical_gates'] for r in backends_with_metrics]
+    total_gates   = [r['metrics']['total_gates']   for r in backends_with_metrics]
+
+    bars3 = axes[1].bar(x - width/2, logical_gates, width,
+                        label='Logical Gates (Uncompiled)',
+                        color='#3BB273', alpha=0.85, edgecolor='black', linewidth=0.8)
+    bars4 = axes[1].bar(x + width/2, total_gates,   width,
+                        label='Physical Gates (Q-Optima Compiled)',
+                        color='#F4A261', alpha=0.85, edgecolor='black', linewidth=0.8)
+
+    # Annotate with overhead percentage
+    for bar, log, phys in zip(bars4, logical_gates, total_gates):
+        overhead = round((phys - log) / max(log, 1) * 100, 1)
+        axes[1].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 0.3,
+                     f'+{overhead}%',
+                     ha='center', va='bottom', fontsize=8,
+                     color='#E84855', fontweight='bold')
+
+    for bar, val in zip(bars3, logical_gates):
+        axes[1].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 0.3,
+                     str(val),
+                     ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    for bar, val in zip(bars4, total_gates):
+        axes[1].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 1.5,
+                     str(val),
+                     ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(backend_labels, fontsize=8)
+    axes[1].set_ylabel('Gate Count', fontsize=11)
+    axes[1].set_title('Gate Count: Logical vs Physical', fontsize=11, fontweight='bold')
+    axes[1].legend(fontsize=9)
+    axes[1].grid(axis='y', alpha=0.3)
+    axes[1].set_ylim(0, max(total_gates) * 1.3)
+
+    # SWAP count annotation at bottom
+    swap_text = ' | '.join([
+        f"{BACKEND_LABELS.get(r['backend_key'], r['backend_key']).split('(')[0].strip()}: "
+        f"{r['metrics']['swap_count']} SWAPs"
+        for r in backends_with_metrics
+    ])
+    fig.text(0.5, 0.01, f'SWAP Gates Added by Compiler: {swap_text}',
+             ha='center', fontsize=9, color='#555555',
+             style='italic')
+
+    plt.tight_layout(rect=[0, 0.04, 1, 1])
+    filepath = timestamped(f'{prefix}_compilation_improvement.png' if prefix else 'compilation_improvement.png')
+    plt.savefig(filepath, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"📊 Compilation improvement chart saved: {filepath}")
 # Replace entire run_comparison() function with:
 def run_comparison():
     ensure_dirs()
@@ -494,6 +617,7 @@ def run_comparison():
                 plot_absolute_error_heatmap(results_2q, prefix="ecg_2q")
                 plot_radar_chart(results_2q, prefix="ecg_2q")
                 plot_measurement_grid(results_2q, prefix="ecg_2q")
+                plot_compilation_improvement(results_2q, prefix="ecg_2q")
 
             if results_4q:
                 print(f"\n🎨 ECG 4-qubit ({len(results_4q)} backends)")
@@ -502,6 +626,7 @@ def run_comparison():
                 plot_radar_chart(results_4q, prefix="ecg_4q")
                 plot_measurement_grid(results_4q, prefix="ecg_4q")
                 plot_optimizer_convergence(results_4q)
+                plot_compilation_improvement(results_4q, prefix="ecg_4q")
 
             if results_2q and results_4q:
                 print(f"\n🎨 ECG scaling graph")
@@ -517,6 +642,7 @@ def run_comparison():
             plot_absolute_error_heatmap(results, prefix=mode_label)
             plot_radar_chart(results, prefix=mode_label)
             plot_measurement_grid(results, prefix=mode_label)
+            plot_compilation_improvement(results, prefix=mode_label)
 
     print(f"\n✅ All graphs saved in: {OUTPUT_DIR}/")
     print("   Files are timestamped — no existing graphs will be overwritten.\n")

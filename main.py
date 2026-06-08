@@ -43,21 +43,25 @@ def extract_code(text):
     """
     Extract Python code from markdown code blocks.
     Handles both ```python and ``` formats.
+    Strips out empty lines to prevent LLM JSON escaping bugs on '\n\n'.
     """
     text_str = str(text)
     
     # Try to find ```python code block first
     match = re.search(r'```python\n(.*?)\n```', text_str, re.DOTALL)
     if match:
-        return match.group(1).strip()
-    
-    # Try generic ``` code block
-    match = re.search(r'```\n(.*?)\n```', text_str, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    
-    # If no code blocks found, return the entire text (it might be raw code)
-    return text_str.strip()
+        code = match.group(1).strip()
+    else:
+        # Try generic ``` code block
+        match = re.search(r'```\n(.*?)\n```', text_str, re.DOTALL)
+        if match:
+            code = match.group(1).strip()
+        else:
+            code = text_str.strip()
+            
+    # Strip empty lines so LLMs don't generate invalid \n\qc escape sequences
+    lines = [line for line in code.split('\n') if line.strip() != '']
+    return '\n'.join(lines)
 
 def print_separator(title):
     """Print a clean section separator."""
@@ -160,16 +164,26 @@ def main():
     print("1. FakeManilaV2    — 5 qubits, linear topology")
     print("2. FakeJakartaV2   — 7 qubits, heavy-hex topology")
     print("3. FakeGuadalupeV2 — 16 qubits, heavy-hex topology")
-    backend_choice = input("Enter 1, 2 or 3 (default 1): ").strip() or "1"
+    print("--- LIVE CLOUD HARDWARE (Requires API Token & Queue Wait) ---")
+    print("4. IBM Cloud Sim   — 32 qubits (ibmq_qasm_simulator)")
+    print("5. IBM Brisbane    — 127 qubits (ibm_brisbane, Real QPU)")
+    print("6. IBM Osaka       — 127 qubits (ibm_osaka, Real QPU)")
+    print("--- HYBRID PIPELINE ---")
+    print("7. Hybrid (Brisbane) — Local Sim with downloaded IBM Cloud Noise profile")
+    backend_choice = input("Enter 1-7 (default 1): ").strip() or "1"
 
     backend_map = {
-        "1": ("manila",    "FakeManilaV2",    "Manila"),
-        "2": ("jakarta",   "FakeJakartaV2",   "Jakarta"),
-        "3": ("guadalupe", "FakeGuadalupeV2", "Guadalupe")
+        "1": ("manila",    "FakeManilaV2",    "Manila (5Q Local)"),
+        "2": ("jakarta",   "FakeJakartaV2",   "Jakarta (7Q Local)"),
+        "3": ("guadalupe", "FakeGuadalupeV2", "Guadalupe (16Q Local)"),
+        "4": ("ibmq_qasm_simulator", "ibmq_qasm_simulator", "IBM Cloud Simulator"),
+        "5": ("ibm_brisbane", "ibm_brisbane", "IBM Brisbane (127Q Live)"),
+        "6": ("ibm_osaka", "ibm_osaka", "IBM Osaka (127Q Live)"),
+        "7": ("hybrid_brisbane", "ibm_brisbane", "Hybrid (Local Sim + IBM Cloud Noise - Brisbane)")
     }
     backend_key, backend_full_name, backend_display = backend_map.get(backend_choice, backend_map["1"])
     os.environ["QOPTIMA_BACKEND"] = backend_key
-    print(f"\n Backend selected: {backend_full_name}")
+    print(f"\n Backend selected: {backend_display}")
 
     generate_topology_map(backend_key, list(range(num_feat)), f"ecg_{backend_key}_{record_id}_beat{beat_idx}_topology.png")
     
@@ -556,6 +570,31 @@ def main():
     print(f"   - logs/architect_log.txt")
     print(f"   - logs/verifier_log.txt")
     print(f"   - logs/optimizer_log.txt")
+
+
+    if success:
+        print_separator("[PHASE 4/4] CLOUD DEPLOYMENT")
+        deploy = input("Deploy this certified circuit to REAL IBM Hardware? (y/n): ").strip().lower()
+        if deploy == 'y':
+            from ibm_connector import run_cloud_validation
+            
+            print("\nSelect IBM Cloud Backend:")
+            print("  0. ibmq_qasm_simulator (Fast connection test)")
+            print("  1. ibm_brisbane (127Q Heavy-Hex)")
+            print("  2. ibm_kyoto (127Q Heavy-Hex)")
+            print("  3. ibm_sherbrooke (127Q Heavy-Hex Eagle r3)")
+            cloud_choice = input("Enter choice (0-3, default 1): ").strip() or "1"
+            
+            final_local_fidelity = fidelity_history[-1][1] if fidelity_history else 0.0
+            
+            # Execute on real hardware
+            run_cloud_validation(
+                circuit_code=current_code,
+                local_fidelity=final_local_fidelity,
+                backend_choice=cloud_choice,
+                extra_info=extra
+            )
+    # ==========================================================
     
     print("\n✨ Q-Optima session complete.\n")
 
