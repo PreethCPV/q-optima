@@ -68,7 +68,8 @@ htmlcov/
 /models/
 /logs/
 /checkpoints/
-
+/visualizations/
+/visual_dataset/
 # Common ML/AI frameworks artifacts
 tensorboard/
 runs/
