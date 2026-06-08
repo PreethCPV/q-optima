@@ -29,6 +29,39 @@ pip-delete-this-file.txt
 htmlcov/
 .nox/
 
+# --- General Operating System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Build & Dependency Artifacts ---
+# Python Virtual Environments
+venv/
+.venv/
+.tox/
+env/
+.env
+.logs
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Installer files
+*.egg-info/
+.eggs/
+
+# Pip/Poetry lock and install files (often regenerated)
+pip-log.txt
+pip-delete-this-file.txt
+
+# --- Testing & Coverage ---
+.coverage
+.pytest_cache/
+htmlcov/
+.nox/
+
 # --- Machine Learning & AI Specifics ---
 # Directories for large models, data, and logs
 /data/
