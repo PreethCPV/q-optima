@@ -17,7 +17,7 @@ Traditional quantum compilers typically rely on static, noise-inducing SWAP gate
 
 ## System Architecture
 
-![System Architecture](./images/system_architecture.jpg)
+![System Architecture](./images/system_architecture.png)
 
 *(Above: The multi-agent system architecture of the Q-Optima framework, illustrating the interaction between the Architect, Verifier, and Optimizer agents driven by the central Rules Engine).*
 
@@ -130,12 +130,6 @@ The clinical dataset utilized for the ZZ Feature Map encoding case study is the 
 ## Performance Results
 
 Empirical validations confirm that Q-Optima successfully bypasses SWAP-gate limitations on restrictive topologies, achieving a high physical execution fidelity on live IBM Quantum hardware also provides low hardware degradation gap.
-
-### Compilation Efficiency
-
-![Radar Chart](./images/bv_radar_chart.png)
-
-*(Above: Backend Performance Radar Chart demonstrating the framework's ability to achieve zero-SWAP routing and superior gate efficiency on heavy-hex architectures compared to linear chains).*
 
 ### Clinical Data Encoding Noise Resilience
 
